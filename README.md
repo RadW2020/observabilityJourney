@@ -304,8 +304,8 @@ This project is designed as a learning and demonstration tool. Key areas for ext
 ## 📚 **Additional Resources**
 
 - [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
-- [ClickHouse Time-Series Best Practices](https://clickhouse.com/docs/en/guides/developer/time-series/)
-- [Vercel Observability Blog Posts](https://vercel.com/blog/observability)
+- [ClickHouse Time-Series Best Practices](https://clickhouse.com/blog/working-with-time-series-data-and-functions-ClickHouse)
+- [Vercel Observability Blog Posts](https://vercel.com/products/observability)
 - [Distributed Tracing Patterns](https://microservices.io/patterns/observability/distributed-tracing.html)
 
 ---
