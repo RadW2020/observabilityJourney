@@ -41,10 +41,11 @@ class DistributedTraceProcessor {
       maxBytesPerPartition: 1048576, // 1MB
     });
 
-    // Batch processing for efficiency - smaller for demo
-    this.batchSize = 2;
+    // Batch processing for efficiency - increased for better throughput
+    this.batchSize = 50; // Increased from 2 to 50
     this.spanBuffer = [];
     this.batchTimer = null;
+    this.batchTimeout = 1000; // Flush every second if not full
 
     // Performance metrics
     this.metrics = {
@@ -66,6 +67,9 @@ class DistributedTraceProcessor {
       topics: ["traces-iad1", "traces-sfo1", "traces-fra1"],
       fromBeginning: false,
     });
+
+    // Set up periodic batch flush
+    this.batchTimer = setInterval(() => this.flushBatch(), this.batchTimeout);
 
     await this.consumer.run({
       eachMessage: async ({ topic, message }) => {
@@ -120,21 +124,24 @@ class DistributedTraceProcessor {
       spans = [spans];
     }
 
-    for (const span of spans) {
-      // Apply intelligent sampling
-      if (!this.shouldSampleSpan(span)) continue;
+    // Process spans in parallel for better throughput
+    await Promise.all(
+      spans.map(async (span) => {
+        // Apply intelligent sampling
+        if (!this.shouldSampleSpan(span)) return;
 
-      // Enhance span with Vercel context
-      const enhancedSpan = this.enhanceSpan(span, region);
+        // Enhance span with context
+        const enhancedSpan = this.enhanceSpan(span, region);
 
-      // Add to batch
-      this.spanBuffer.push(enhancedSpan);
+        // Add to batch
+        this.spanBuffer.push(enhancedSpan);
 
-      // Flush batch if full
-      if (this.spanBuffer.length >= this.batchSize) {
-        await this.flushBatch();
-      }
-    }
+        // Flush batch if full
+        if (this.spanBuffer.length >= this.batchSize) {
+          await this.flushBatch();
+        }
+      })
+    );
 
     this.metrics.spansProcessed += spans.length;
   }

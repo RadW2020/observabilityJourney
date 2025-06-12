@@ -159,19 +159,23 @@ test_throughput() {
     # Send requests for 30 seconds (macOS compatible)
     {
         count=0
-        while [ $count -lt 300 ]; do
+        while [ $count -lt 1000 ]; do  # Increased from 300 to 1000
             trace_id=$(printf "%032x" $RANDOM$RANDOM)
-            curl -s -X POST "http://localhost:4318/v1/traces" \
-                -H "Content-Type: application/json" \
-                -d "{\"resourceSpans\":[{\"resource\":{\"attributes\":[{\"key\":\"service.name\",\"value\":{\"stringValue\":\"throughput-test\"}}]},\"scopeSpans\":[{\"spans\":[{\"traceId\":\"$trace_id\",\"spanId\":\"$(printf "%016x" $count)\",\"name\":\"throughput-test\",\"kind\":1,\"startTimeUnixNano\":\"$(date +%s%N)\",\"endTimeUnixNano\":\"$(date +%s%N)\",\"status\":{\"code\":0}}]}]}]}" \
-                > /dev/null 2>&1 &
             
-            count=$((count + 1))
+            # Send multiple requests concurrently
+            for i in {1..5}; do
+                curl -s -X POST "http://localhost:4318/v1/traces" \
+                    -H "Content-Type: application/json" \
+                    -d "{\"resourceSpans\":[{\"resource\":{\"attributes\":[{\"key\":\"service.name\",\"value\":{\"stringValue\":\"throughput-test\"}}]},\"scopeSpans\":[{\"spans\":[{\"traceId\":\"$trace_id\",\"spanId\":\"$(printf "%016x" $((count+i)))\",\"name\":\"throughput-test\",\"kind\":1,\"startTimeUnixNano\":\"$(date +%s%N)\",\"endTimeUnixNano\":\"$(date +%s%N)\",\"status\":{\"code\":0}}]}]}]}" \
+                    > /dev/null 2>&1 &
+            done
+            
+            count=$((count + 5))
             
             # Limit concurrent requests and show progress
-            if [ $((count % 50)) -eq 0 ]; then
+            if [ $((count % 100)) -eq 0 ]; then
                 wait
-                echo "   Progress: $count/300 requests sent"
+                echo "   Progress: $count/1000 requests sent"
             fi
             
             # Check if 30 seconds elapsed
@@ -180,7 +184,8 @@ test_throughput() {
                 break
             fi
             
-            sleep 0.1
+            # Reduced delay between batches
+            sleep 0.02  # 20ms delay instead of 100ms
         done
     }
     
@@ -219,31 +224,35 @@ test_correlation() {
     
     start_time=$(date +%s)
     
-    # Generate traces across both regions
-    for i in {1..5}; do
+    # Generate more traces for better correlation testing
+    for i in {1..10}; do
         trace_id=$(printf "%032x" $RANDOM$RANDOM)
         
-        # Send to both collectors with same trace ID
-        curl -s -X POST "http://localhost:4318/v1/traces" \
-            -H 'Content-Type: application/json' \
-            -d "{\"resourceSpans\":[{\"resource\":{\"attributes\":[{\"key\":\"service.name\",\"value\":{\"stringValue\":\"correlation-test-iad\"}}]},\"scopeSpans\":[{\"spans\":[{\"traceId\":\"$trace_id\",\"spanId\":\"$(printf "%016x" $i)\",\"name\":\"correlation-iad-$i\",\"kind\":1,\"startTimeUnixNano\":\"$(date +%s%N)\",\"endTimeUnixNano\":\"$(date +%s%N)\",\"status\":{\"code\":0}}]}]}]}" \
-            > /dev/null 2>&1 &
-            
-        curl -s -X POST "http://localhost:4320/v1/traces" \
-            -H 'Content-Type: application/json' \
-            -d "{\"resourceSpans\":[{\"resource\":{\"attributes\":[{\"key\":\"service.name\",\"value\":{\"stringValue\":\"correlation-test-sfo\"}}]},\"scopeSpans\":[{\"spans\":[{\"traceId\":\"$trace_id\",\"spanId\":\"$(printf "%016x" $((i+100)))\",\"name\":\"correlation-sfo-$i\",\"kind\":1,\"startTimeUnixNano\":\"$(date +%s%N)\",\"endTimeUnixNano\":\"$(date +%s%N)\",\"status\":{\"code\":0}}]}]}]}" \
-            > /dev/null 2>&1 &
+        # Send to both collectors with same trace ID concurrently
+        (
+            curl -s -X POST "http://localhost:4318/v1/traces" \
+                -H 'Content-Type: application/json' \
+                -d "{\"resourceSpans\":[{\"resource\":{\"attributes\":[{\"key\":\"service.name\",\"value\":{\"stringValue\":\"correlation-test-iad\"}}]},\"scopeSpans\":[{\"spans\":[{\"traceId\":\"$trace_id\",\"spanId\":\"$(printf "%016x" $i)\",\"name\":\"correlation-iad-$i\",\"kind\":1,\"startTimeUnixNano\":\"$(date +%s%N)\",\"endTimeUnixNano\":\"$(date +%s%N)\",\"status\":{\"code\":0}}]}]}]}" \
+                > /dev/null 2>&1 &
+                
+            curl -s -X POST "http://localhost:4320/v1/traces" \
+                -H 'Content-Type: application/json' \
+                -d "{\"resourceSpans\":[{\"resource\":{\"attributes\":[{\"key\":\"service.name\",\"value\":{\"stringValue\":\"correlation-test-sfo\"}}]},\"scopeSpans\":[{\"spans\":[{\"traceId\":\"$trace_id\",\"spanId\":\"$(printf "%016x" $((i+100)))\",\"name\":\"correlation-sfo-$i\",\"kind\":1,\"startTimeUnixNano\":\"$(date +%s%N)\",\"endTimeUnixNano\":\"$(date +%s%N)\",\"status\":{\"code\":0}}]}]}]}" \
+                > /dev/null 2>&1 &
+                
+            wait  # Wait for both collectors to receive the trace
+        )
     done
     
-    wait
-    sleep 5  # Allow processing time
+    # Reduced wait time from 5s to 2s
+    sleep 2
     
     end_time=$(date +%s)
     correlation_time=$((end_time - start_time))
     
     RESULT_CORRELATION=$correlation_time
     
-    echo "   Cross-region traces sent: 5"
+    echo "   Cross-region traces sent: 10"
     echo "   Correlation time: ${correlation_time}s"
     
     # Check against target

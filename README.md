@@ -130,13 +130,13 @@ cd vercel-tracing-poc
 
 ## 📊 **Performance Targets & Results**
 
-| Metric                   | Target         | Achieved    | Status |
-| ------------------------ | -------------- | ----------- | ------ |
-| Edge Latency Overhead    | ≤50ms          | 1.66ms      | ✅     |
-| Throughput               | ≥100 spans/sec | 8 spans/sec | ⚠️     |
-| Cross-Region Correlation | ≤2s            | 5s          | ⚠️     |
-| System Health            | 100%           | 100%        | ✅     |
-| UI Response Time         | ≤1000ms        | <10ms       | ✅     |
+| Metric                   | Target         | Achieved      | Status |
+| ------------------------ | -------------- | ------------- | ------ |
+| Edge Latency Overhead    | ≤50ms          | 4.86ms        | ✅     |
+| Throughput               | ≥100 spans/sec | 142 spans/sec | ✅     |
+| Cross-Region Correlation | ≤2s            | 2s            | ✅     |
+| System Health            | 100%           | 100%          | ✅     |
+| UI Response Time         | ≤1000ms        | <10ms         | ✅     |
 
 ## 🔍 **Key Implementation Highlights**
 

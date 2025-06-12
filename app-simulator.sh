@@ -85,35 +85,37 @@ simulate_user_session() {
     local session_id=$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 8 | head -n 1)
     echo "👤 Simulating user session: $session_id"
     
-    # Landing page (IAD)
-    generate_trace "iad1" "web-app" "landing" 150
-    sleep 0.2
-    
-    # API calls (IAD)
-    generate_trace "iad1" "web-app" "user" 250
-    generate_trace "iad1" "web-app" "profile" 180
-    sleep 0.3
-    
-    # Edge function calls (SFO)
-    generate_trace "sfo1" "edge-function" "geo-lookup" 50
-    generate_trace "sfo1" "edge-function" "auth-check" 30
-    sleep 0.5
-    
-    # Cross-region API call
-    generate_trace "iad1" "web-app" "orders" 400
-    
-    # Occasionally generate errors (5% rate)
-    if [ $((RANDOM % 20)) -eq 0 ]; then
-        generate_trace "iad1" "web-app" "error" 100 2
-    fi
+    # Generate all traces concurrently for better throughput
+    (
+        # Landing page (IAD)
+        generate_trace "iad1" "web-app" "landing" 150 &
+        
+        # API calls (IAD)
+        generate_trace "iad1" "web-app" "user" 250 &
+        generate_trace "iad1" "web-app" "profile" 180 &
+        
+        # Edge function calls (SFO)
+        generate_trace "sfo1" "edge-function" "geo-lookup" 50 &
+        generate_trace "sfo1" "edge-function" "auth-check" 30 &
+        
+        # Cross-region API call
+        generate_trace "iad1" "web-app" "orders" 400 &
+        
+        # Occasionally generate errors (5% rate)
+        if [ $((RANDOM % 20)) -eq 0 ]; then
+            generate_trace "iad1" "web-app" "error" 100 2 &
+        fi
+        
+        wait  # Wait for all traces in this session to complete
+    )
 }
 
 # Function to simulate traffic bursts
 simulate_traffic_burst() {
     echo "📈 Simulating traffic burst..."
-    for i in $(seq 1 20); do
+    # Increase concurrent sessions from 20 to 50
+    for i in $(seq 1 50); do
         simulate_user_session &
-        sleep 0.1
     done
     wait
 }
@@ -125,16 +127,19 @@ counter=0
 while true; do
     counter=$((counter + 1))
     
-    # Normal traffic pattern
-    simulate_user_session
+    # Normal traffic pattern - run multiple sessions concurrently
+    for i in $(seq 1 5); do
+        simulate_user_session &
+    done
+    wait
     
-    # Every 10th iteration, create a burst
-    if [ $((counter % 10)) -eq 0 ]; then
+    # Every 5th iteration (reduced from 10), create a burst
+    if [ $((counter % 5)) -eq 0 ]; then
         simulate_traffic_burst
         echo "📊 Completed $counter sessions, latest burst: $(date)"
     fi
     
-    # Random delay between 1-5 seconds
-    sleep_time=$((RANDOM % 5 + 1))
+    # Reduced random delay between 0.5-2 seconds (from 1-5)
+    sleep_time=$(echo "scale=2; $((RANDOM % 15 + 5)) / 10" | bc)
     sleep $sleep_time
 done 
