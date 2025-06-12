@@ -1,7 +1,7 @@
 {
-  "name": "vercel-trace-processor",
+  "name": "distributed-trace-processor",
   "version": "1.0.0",
-  "description": "Production-ready trace processor for Vercel distributed tracing PoC",
+  "description": "Production-ready trace processor for distributed tracing PoC",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -14,6 +14,6 @@
   "engines": {
     "node": ">=18"
   },
-  "author": "Vercel Observability Team",
+  "author": "Observability Team",
   "license": "MIT"
 }

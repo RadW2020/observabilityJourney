@@ -1,15 +1,15 @@
 // trace-processor-enhanced.js
-// Production-ready trace processor for Vercel distributed tracing
+// Production-ready trace processor for distributed tracing
 
 const { Kafka } = require("kafkajs");
 const { createClient } = require("@clickhouse/client");
 const crypto = require("crypto");
 
-class VercelTraceProcessor {
+class DistributedTraceProcessor {
   constructor() {
     // Kafka setup with optimized configuration
     this.kafka = new Kafka({
-      clientId: "vercel-trace-processor",
+      clientId: "distributed-trace-processor",
       brokers: [process.env.KAFKA_BROKER || "localhost:9092"],
       retry: { initialRetryTime: 100, retries: 8 },
     });
@@ -36,7 +36,7 @@ class VercelTraceProcessor {
     };
 
     this.consumer = this.kafka.consumer({
-      groupId: "vercel-trace-processor",
+      groupId: "distributed-trace-processor",
       sessionTimeout: 30000,
       maxBytesPerPartition: 1048576, // 1MB
     });
@@ -59,7 +59,7 @@ class VercelTraceProcessor {
   }
 
   async start() {
-    console.log("🚀 Starting Vercel Trace Processor...");
+    console.log("🚀 Starting Distributed Trace Processor...");
 
     await this.consumer.connect();
     await this.consumer.subscribe({
@@ -143,7 +143,7 @@ class VercelTraceProcessor {
     // For demo purposes, sample all spans to see the system working
     // In production, you'd use proper trace-complete sampling
     return true;
-    
+
     // Production sampling logic (commented out for demo):
     // const isError = span.status?.code === 2;
     // const isSlow = span.endTimeUnixNano - span.startTimeUnixNano > 5000000000; // >5s
@@ -180,10 +180,10 @@ class VercelTraceProcessor {
       http_route: span.attributes?.["http.route"] || "",
       http_status_code: parseInt(span.attributes?.["http.status_code"]) || 0,
 
-      // Vercel-specific attributes
-      vercel_function_type: span.attributes?.["vercel.function_type"] || "",
-      vercel_region: span.attributes?.["vercel.region"] || region,
-      vercel_deployment_id: span.attributes?.["vercel.deployment_id"] || "",
+      // Platform-specific attributes
+      function_type: span.attributes?.["function.type"] || "",
+      region: span.attributes?.["platform.region"] || region,
+      deployment_id: span.attributes?.["platform.deployment_id"] || "",
 
       // Performance flags
       is_slow: span.endTimeUnixNano - span.startTimeUnixNano > 5000000000,
@@ -239,7 +239,7 @@ class VercelTraceProcessor {
 }
 
 // Start the processor
-const processor = new VercelTraceProcessor();
+const processor = new DistributedTraceProcessor();
 
 // Graceful shutdown handling
 process.on("SIGINT", async () => {
@@ -255,4 +255,4 @@ process.on("SIGTERM", async () => {
 // Start processing
 processor.start().catch(console.error);
 
-module.exports = VercelTraceProcessor;
+module.exports = DistributedTraceProcessor;

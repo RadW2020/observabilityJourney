@@ -14,10 +14,10 @@ processors:
   # Add region-specific attributes
   attributes:
     actions:
-      - key: vercel.region
+      - key: platform.region
         value: ${env:REGION}
         action: insert
-      - key: vercel.pop_type
+      - key: platform.pop_type
         value: edge
         action: insert
 
@@ -60,7 +60,7 @@ processors:
             - name: edge_function_check
               type: string_attribute
               string_attribute:
-                key: vercel.function_type
+                key: function.type
                 values: ["edge"]
             - name: edge_sample_rate
               type: probabilistic

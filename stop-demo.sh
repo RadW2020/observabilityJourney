@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # stop-demo.sh
-# Cleanup script for Vercel Distributed Tracing PoC
+# Cleanup script for Distributed Tracing PoC
 
-echo "🛑 Stopping Vercel Distributed Tracing PoC..."
+echo "🛑 Stopping Distributed Tracing PoC..."
 
 # Stop and remove all containers
 docker-compose down --remove-orphans --volumes

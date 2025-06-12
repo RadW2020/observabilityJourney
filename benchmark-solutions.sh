@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # benchmark-solutions.sh
-# Enhanced benchmarking script to validate all implemented solutions for Vercel Distributed Tracing
+# Enhanced benchmarking script to validate all implemented solutions for Distributed Tracing
 
 set -e
 
-echo "🎯 VERCEL DISTRIBUTED TRACING - COMPREHENSIVE BENCHMARK SUITE"
+echo "🎯 DISTRIBUTED TRACING - COMPREHENSIVE BENCHMARK SUITE"
 echo "==========================================================="
 echo ""
 
@@ -327,7 +327,7 @@ test_ui_response() {
 generate_report() {
     local report_file="benchmark-report-$(date +%Y%m%d-%H%M%S).txt"
     
-    echo "# Vercel Distributed Tracing Benchmark Report" > $report_file
+    echo "# Distributed Tracing Benchmark Report" > $report_file
     echo "Generated: $(date)" >> $report_file
     echo "" >> $report_file
     

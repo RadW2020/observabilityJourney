@@ -1,9 +1,9 @@
 #!/bin/sh
 
 # app-simulator.sh
-# Generates realistic traces for Vercel observability testing
+# Generates realistic traces for distributed observability testing
 
-echo "🚀 Starting Vercel App Simulator..."
+echo "🚀 Starting Distributed App Simulator..."
 
 # Wait for collectors to be ready
 sleep 30
@@ -34,16 +34,16 @@ generate_trace() {
         "key": "service.name",
         "value": {"stringValue": "$service_name"}
       }, {
-        "key": "vercel.region",
+        "key": "platform.region",
         "value": {"stringValue": "$region"}
       }, {
-        "key": "vercel.function_type",
+        "key": "function.type",
         "value": {"stringValue": "edge"}
       }]
     },
     "instrumentationLibrarySpans": [{
       "instrumentationLibrary": {
-        "name": "vercel-simulator"
+        "name": "distributed-simulator"
       },
       "spans": [{
         "traceId": "$trace_id",
@@ -86,25 +86,25 @@ simulate_user_session() {
     echo "👤 Simulating user session: $session_id"
     
     # Landing page (IAD)
-    generate_trace "iad1" "vercel-nextjs-app" "landing" 150
+    generate_trace "iad1" "web-app" "landing" 150
     sleep 0.2
     
     # API calls (IAD)
-    generate_trace "iad1" "vercel-nextjs-app" "user" 250
-    generate_trace "iad1" "vercel-nextjs-app" "profile" 180
+    generate_trace "iad1" "web-app" "user" 250
+    generate_trace "iad1" "web-app" "profile" 180
     sleep 0.3
     
     # Edge function calls (SFO)
-    generate_trace "sfo1" "vercel-edge-function" "geo-lookup" 50
-    generate_trace "sfo1" "vercel-edge-function" "auth-check" 30
+    generate_trace "sfo1" "edge-function" "geo-lookup" 50
+    generate_trace "sfo1" "edge-function" "auth-check" 30
     sleep 0.5
     
     # Cross-region API call
-    generate_trace "iad1" "vercel-nextjs-app" "orders" 400
+    generate_trace "iad1" "web-app" "orders" 400
     
     # Occasionally generate errors (5% rate)
     if [ $((RANDOM % 20)) -eq 0 ]; then
-        generate_trace "iad1" "vercel-nextjs-app" "error" 100 2
+        generate_trace "iad1" "web-app" "error" 100 2
     fi
 }
 

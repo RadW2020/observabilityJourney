@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # start-demo.sh
-# Main startup script for Vercel Distributed Tracing PoC
+# Main startup script for Distributed Tracing PoC
 
 set -e
 
-echo "🚀 Starting Vercel Distributed Tracing PoC"
+echo "🚀 Starting Distributed Tracing PoC"
 echo "=========================================="
 
 # Colors for output
@@ -153,7 +153,7 @@ main() {
     wait_for_services
     
     echo ""
-    echo "🎉 Vercel Distributed Tracing PoC is ready!"
+    echo "🎉 Distributed Tracing PoC is ready!"
     echo "==========================================="
     echo ""
     echo "📊 Access Points:"
