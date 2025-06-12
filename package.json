@@ -1,0 +1,19 @@
+{
+  "name": "vercel-trace-processor",
+  "version": "1.0.0",
+  "description": "Production-ready trace processor for Vercel distributed tracing PoC",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --inspect=0.0.0.0:9229 index.js"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "@clickhouse/client": "^0.2.5"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "Vercel Observability Team",
+  "license": "MIT"
+}
