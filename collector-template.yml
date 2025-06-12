@@ -1,0 +1,122 @@
+# collector-template.yml
+# Unified OpenTelemetry Collector Configuration Template
+# Variables: REGION, KAFKA_TOPIC, SERVICE_INSTANCE_ID
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # Add region-specific attributes
+  attributes:
+    actions:
+      - key: vercel.region
+        value: ${env:REGION}
+        action: insert
+      - key: vercel.pop_type
+        value: edge
+        action: insert
+
+  # Batch processing optimization
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+
+  # Resource identification
+  resource:
+    attributes:
+      - key: service.instance.id
+        value: ${env:SERVICE_INSTANCE_ID}
+        action: insert
+
+  # Intelligent sampling
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 50000
+    expected_new_traces_per_sec: 100
+    policies:
+      # Always sample errors
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+
+      # Always sample slow requests
+      - name: slow_requests
+        type: latency
+        latency:
+          threshold_ms: 5000
+
+      # Sample edge functions at 5%
+      - name: edge_functions
+        type: and
+        and:
+          and_sub_policy:
+            - name: edge_function_check
+              type: string_attribute
+              string_attribute:
+                key: vercel.function_type
+                values: ["edge"]
+            - name: edge_sample_rate
+              type: probabilistic
+              probabilistic:
+                sampling_percentage: 5
+
+      # Sample API routes at 10%
+      - name: api_routes
+        type: and
+        and:
+          and_sub_policy:
+            - name: api_route_check
+              type: string_attribute
+              string_attribute:
+                key: http.route
+                values: ["/api/*"]
+            - name: api_sample_rate
+              type: probabilistic
+              probabilistic:
+                sampling_percentage: 10
+
+exporters:
+  # Kafka for processing pipeline
+  kafka:
+    brokers: [kafka:29092]
+    topic: ${env:KAFKA_TOPIC}
+    encoding: otlp_proto
+    producer:
+      max_message_bytes: 1000000
+      required_acks: 1
+      compression: gzip
+
+  # OTLP to Jaeger for visualization
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  # Debug logging
+  logging:
+    loglevel: info
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [attributes, resource, batch]
+      exporters: [kafka, otlp/jaeger, logging]
+
+  telemetry:
+    logs:
+      level: "debug"
+    metrics:
+      address: 0.0.0.0:8889
