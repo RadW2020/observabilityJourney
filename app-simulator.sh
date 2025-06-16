@@ -6,12 +6,12 @@
 echo "🚀 Starting Distributed App Simulator..."
 
 # Wait for collectors to be ready
-sleep 30
+sleep 10
 
 # Function to generate OTLP trace data
 generate_trace() {
-    local trace_id=$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 32 | head -n 1)
-    local span_id=$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 16 | head -n 1)
+    local trace_id=$(openssl rand -hex 16)
+    local span_id=$(openssl rand -hex 8)
     local region=$1
     local service_name=$2
     local operation=$3
@@ -82,7 +82,7 @@ EOF
 
 # Function to simulate realistic user patterns
 simulate_user_session() {
-    local session_id=$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 8 | head -n 1)
+    local session_id=$(openssl rand -hex 4)
     echo "👤 Simulating user session: $session_id"
     
     # Generate all traces concurrently for better throughput
