@@ -10,8 +10,8 @@ sleep 10
 
 # Function to generate OTLP trace data
 generate_trace() {
-    local trace_id=$(openssl rand -hex 16)
-    local span_id=$(openssl rand -hex 8)
+    local trace_id=$(head -c 16 /dev/urandom | xxd -p)
+    local span_id=$(head -c 8 /dev/urandom | xxd -p)
     local region=$1
     local service_name=$2
     local operation=$3
@@ -25,7 +25,11 @@ generate_trace() {
         collector_endpoint="otel-collector-sfo:4318"
     fi
     
-    # Generate OTLP JSON payload
+    # Convert traceId and spanId from hex to base64
+    local trace_id_b64=$(echo -n "$trace_id" | xxd -r -p | base64)
+    local span_id_b64=$(echo -n "$span_id" | xxd -r -p | base64)
+
+    # Generate OTLP JSON payload (OTLP 1.0+)
     cat << EOF > /tmp/trace_${trace_id}.json
 {
   "resourceSpans": [{
@@ -41,13 +45,13 @@ generate_trace() {
         "value": {"stringValue": "edge"}
       }]
     },
-    "instrumentationLibrarySpans": [{
-      "instrumentationLibrary": {
+    "scopeSpans": [{
+      "scope": {
         "name": "distributed-simulator"
       },
       "spans": [{
-        "traceId": "$trace_id",
-        "spanId": "$span_id",
+        "traceId": "$trace_id_b64",
+        "spanId": "$span_id_b64",
         "name": "$operation",
         "kind": "SPAN_KIND_SERVER",
         "startTimeUnixNano": "$(date +%s)000000000",
@@ -71,6 +75,9 @@ generate_trace() {
 }
 EOF
 
+    # Print the generated JSON for debugging
+    cat /tmp/trace_${trace_id}.json
+
     # Send to collector
     curl -s -X POST \
         -H "Content-Type: application/json" \
@@ -82,7 +89,7 @@ EOF
 
 # Function to simulate realistic user patterns
 simulate_user_session() {
-    local session_id=$(openssl rand -hex 4)
+    local session_id=$(head -c 4 /dev/urandom | xxd -p)
     echo "👤 Simulating user session: $session_id"
     
     # Generate all traces concurrently for better throughput
