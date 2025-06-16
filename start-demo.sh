@@ -164,7 +164,7 @@ main() {
     echo "  🔄 App Simulator:    Continuously generating traces"
     echo ""
     echo "🚀 Next Steps:"
-    echo "  1. Generate load:    docker exec app-simulator sh /app-simulator.sh (already running continuously)"
+    echo "  1. Generate load:    docker exec app-simulator sh /app-simulator.sh (run continuously)"
     echo "  2. Run benchmarks:   ./benchmark-solutions.sh"
     echo "  3. Explore traces in Jaeger"
     echo ""
