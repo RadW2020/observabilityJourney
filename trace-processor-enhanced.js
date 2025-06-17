@@ -3,7 +3,6 @@
 
 const { Kafka } = require("kafkajs");
 const { createClient } = require("@clickhouse/client");
-const crypto = require("crypto");
 
 class DistributedTraceProcessor {
   constructor() {

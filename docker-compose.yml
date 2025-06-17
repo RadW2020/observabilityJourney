@@ -163,7 +163,7 @@ services:
 
   # ===== MONITORING =====
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.4.1
     container_name: prometheus
     ports:
       - "9090:9090"

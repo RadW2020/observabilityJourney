@@ -23,9 +23,9 @@ processors:
 
   # Batch processing optimization
   batch:
-    timeout: 1s
-    send_batch_size: 1024
-    send_batch_max_size: 2048
+    timeout: 100ms
+    send_batch_size: 5
+    send_batch_max_size: 10
 
   # Resource identification
   resource:
@@ -36,9 +36,9 @@ processors:
 
   # Intelligent sampling
   tail_sampling:
-    decision_wait: 10s
-    num_traces: 50000
-    expected_new_traces_per_sec: 100
+    decision_wait: 5s
+    num_traces: 10000
+    expected_new_traces_per_sec: 50
     policies:
       # Always sample errors
       - name: errors
@@ -89,7 +89,7 @@ exporters:
     topic: ${env:KAFKA_TOPIC}
     encoding: otlp_proto
     producer:
-      max_message_bytes: 1000000
+      max_message_bytes: 50000000 # 50MB limit
       required_acks: 1
       compression: gzip
 
