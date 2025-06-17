@@ -1,6 +1,6 @@
-# Vercel Distributed Tracing Architecture PoC
+# Distributed Tracing Architecture PoC
 
-> **Production-scale observability system demonstrating enterprise-grade distributed tracing for Vercel's serverless platform**
+> **Production-scale observability system demonstrating enterprise-grade distributed tracing**
 
 [![Docker](https://img.shields.io/badge/Docker-20.10+-blue)](https://docker.com)
 [![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-1.0+-green)](https://opentelemetry.io)
@@ -8,7 +8,7 @@
 
 ## 🎯 **Project Purpose**
 
-This project demonstrates a **production-ready distributed tracing architecture** designed for Vercel's scale, addressing the specific challenges of observability in a globally distributed serverless platform.
+This project demonstrates a **production-ready distributed tracing architecture** designed for scale, addressing the specific challenges of observability in a globally distributed serverless platform.
 
 **Primary Goals:**
 
@@ -93,7 +93,7 @@ graph TB
 | **Storage**       | ClickHouse (Sharded)     | High-performance time-series storage  |
 | **Correlation**   | Redis                    | Cross-region trace stitching          |
 | **Visualization** | Jaeger + Grafana         | Trace exploration & monitoring        |
-| **Applications**  | Next.js + Edge Functions | Realistic Vercel workload simulation  |
+| **Applications**  | Next.js + Edge Functions | Realistic workload simulation         |
 
 ## 🚀 **Quick Start**
 
@@ -214,7 +214,7 @@ if (regions.length > 1) {
 
 ### Blog Post Topics
 
-- "Building Production-Scale Distributed Tracing: A Vercel Case Study"
+- "Building Production-Scale Distributed Tracing: A Case Study"
 - "Cross-Region Trace Correlation: Solving the Serverless Observability Challenge"
 - "Optimizing OpenTelemetry for Edge Computing: Performance & Cost Analysis"
 
@@ -329,4 +329,4 @@ This project provides a **complete, production-ready observability architecture*
 
 ---
 
-**Built for demonstrating production-scale observability architecture. Perfect for senior backend engineer preparation and technical content creation.**
+**Built for demonstrating production-scale observability architecture. Perfect for senior backend engineer study and technical content creation.**

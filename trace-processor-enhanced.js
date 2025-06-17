@@ -154,7 +154,7 @@ class DistributedTraceProcessor {
     // Production sampling logic (commented out for demo):
     // const isError = span.status?.code === 2;
     // const isSlow = span.endTimeUnixNano - span.startTimeUnixNano > 5000000000; // >5s
-    // const functionType = span.attributes?.["vercel.function_type"];
+    // const functionType = span.attributes?.["function_type"];
     // if (isError || isSlow) return true;
     // const rate = this.samplingRates[`${functionType}_traces`] || 0.1;
     // const hash = crypto.createHash("md5").update(span.traceId).digest("hex");
