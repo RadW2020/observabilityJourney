@@ -54,50 +54,6 @@ check_prerequisites() {
     log_success "Prerequisites check completed"
 }
 
-# Create required directory structure
-setup_directories() {
-    log_info "Setting up directory structure..."
-    
-    mkdir -p grafana/{dashboards,datasources}
-    
-    log_success "Directory structure created"
-}
-
-# Create minimal configurations
-create_configs() {
-    log_info "Creating service configurations..."
-    
-    # Ensure ClickHouse init directory exists
-    if [ ! -d "clickhouse-init" ]; then
-        log_warning "ClickHouse init directory not found - creating it"
-        mkdir -p clickhouse-init
-        log_warning "Please ensure clickhouse-init/init.sql exists with proper schema"
-    fi
-    
-    # Create basic Grafana datasource config
-    if [ ! -f "grafana/datasources/clickhouse.yml" ]; then
-        mkdir -p grafana/datasources
-        cat > grafana/datasources/clickhouse.yml << 'EOF'
-apiVersion: 1
-
-datasources:
-  - name: ClickHouse
-    type: grafana-clickhouse-datasource
-    url: http://clickhouse:8123
-    access: proxy
-    basicAuth: false
-    isDefault: true
-    jsonData:
-      username: admin
-      defaultDatabase: traces
-    secureJsonData:
-      password: password
-EOF
-    fi
-    
-    log_success "Configurations created"
-}
-
 # Start services
 start_services() {
     log_info "Starting services with Docker Compose..."
@@ -137,6 +93,13 @@ wait_for_services() {
     done
     echo " ✅"
     
+    echo -n "Waiting for Grafana"
+    while ! curl -s http://localhost:3002 >/dev/null 2>&1; do
+        echo -n "."
+        sleep 2
+    done
+    echo " ✅"
+    
     # Give additional time for all services to fully initialize
     log_info "Allowing additional time for service initialization..."
     sleep 10
@@ -147,8 +110,6 @@ wait_for_services() {
 # Main execution
 main() {
     check_prerequisites
-    setup_directories
-    create_configs
     start_services
     wait_for_services
     
@@ -157,28 +118,31 @@ main() {
     echo "==========================================="
     echo ""
     echo "📊 Access Points:"
-    echo "  🔍 Jaeger UI:        http://localhost:16686"
-    echo "  📈 Grafana:          http://localhost:3002 (admin/admin)"
-    echo "  💾 ClickHouse:       http://localhost:8123"
-    echo "  📊 Prometheus:       http://localhost:9090"
-    echo "  🔄 App Simulator:    Continuously generating traces"
+    echo "  🔍 Jaeger UI:          http://localhost:16686"
+    echo "  📈 Grafana:            http://localhost:3002 (admin/admin)"
+    echo "  💾 ClickHouse Native:  http://localhost:9000"
+    echo "  💾 ClickHouse HTTP:    http://localhost:8123"
+    echo "  📊 Prometheus:         http://localhost:9090"
+    echo "  🔄 App Simulator:      Continuously generating traces"
     echo ""
     echo "🚀 Next Steps:"
-    echo "  1. Generate load:    docker exec app-simulator sh /app-simulator.sh (run continuously)"
-    echo "  2. Run benchmarks:   ./benchmark-solutions.sh"
-    echo "  3. Explore traces in Jaeger"
+    echo "  1. Wait for traces:    The app simulator is automatically generating traces"
+    echo "  2. View in Grafana:    Open http://localhost:3002 and go to Dashboards"
+    echo "  3. Explore in Jaeger:  Open http://localhost:16686 to see individual traces"
     echo ""
-    echo "📋 Performance Targets:"
-    echo "  • Edge latency overhead: <0.1ms"
-    echo "  • Cross-region correlation: <1s"
-    echo "  • Sampling efficiency: 90%+"
-    echo "  • Storage compression: 80%+"
+    echo "📋 System Status:"
+    echo "  • Grafana:             Provisioned with ClickHouse datasource"
+    echo "  • ClickHouse:          Native protocol on 9000, HTTP on 8123"
+    echo "  • Trace Generation:    Automatic via app-simulator"
+    echo "  • Data Persistence:    Enabled via Docker volumes"
     echo ""
-    echo "🎯 This demonstrates solutions for:"
+    echo "🎯 Features Enabled:"
     echo "  ✅ Cross-region trace correlation"
-    echo "  ✅ Edge function latency optimization"
-    echo "  ✅ Trace-complete sampling"
-    echo "  ✅ Horizontal storage scaling"
+    echo "  ✅ Native ClickHouse protocol"
+    echo "  ✅ Automatic dashboard provisioning"
+    echo "  ✅ Continuous trace generation"
+    echo ""
+    echo "💡 Tip: If you don't see data in Grafana immediately, wait a few minutes for traces to accumulate"
 }
 
 # Run main function

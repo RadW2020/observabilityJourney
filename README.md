@@ -107,7 +107,7 @@ graph TB
 
 ```bash
 git clone <repository>
-cd vercel-tracing-poc
+cd observabilityJourney
 
 # Start all services
 ./start-demo.sh
@@ -148,7 +148,7 @@ const samplingDecision = sampler.shouldSampleTrace({
   traceId,
   isError: span.status?.code === 2,
   duration: span.endTime - span.startTime,
-  serviceType: span.attributes?.["vercel.function_type"],
+  serviceType: span.attributes?.["function_type"],
 });
 ```
 
@@ -180,7 +180,6 @@ if (regions.length > 1) {
 ```
 ├── README.md                     # Complete project documentation
 ├── start-demo.sh                 # One-command startup with health checks
-├── stop-demo.sh                  # Clean shutdown and cleanup
 ├── benchmark-solutions.sh        # Performance validation suite
 ├── docker-compose.yml           # Complete observability stack
 ├── trace-processor-enhanced.js  # Production-ready trace processing

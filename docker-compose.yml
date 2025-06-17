@@ -137,11 +137,11 @@ services:
 
   # ===== APPLICATION SIMULATORS =====
   app-simulator:
-    image: curlimages/curl:latest
+    image: alpine:latest
     container_name: app-simulator
     volumes:
       - ./app-simulator.sh:/app-simulator.sh
-    command: sh /app-simulator.sh
+    command: sh -c "apk add --no-cache curl bc openssl && sh /app-simulator.sh"
     depends_on:
       - otel-collector-iad
       - otel-collector-sfo
@@ -179,9 +179,11 @@ services:
       - "3002:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource 4.0.0
     volumes:
       - ./grafana/dashboards:/var/lib/grafana/dashboards
       - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboards/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
     networks:
       - tracing-net
 
