@@ -211,6 +211,9 @@ test_throughput_stress() {
     # Start workers
     local start_time=$(date +%s)
     
+    touch /tmp/benchmark_errors_$$.log
+    touch /tmp/benchmark_success_$$.log
+    
     for ((w=0; w<concurrent_workers; w++)); do
         worker_function $w &
     done
@@ -222,7 +225,9 @@ test_throughput_stress() {
     local actual_duration=$((end_time - start_time))
     
     # Wait for resource monitoring to complete
-    wait $monitor_pid
+    if kill -0 $monitor_pid 2>/dev/null; then
+        wait $monitor_pid
+    fi
     
     # Calculate results
     local success_count=$(wc -l < /tmp/benchmark_success_$$.log 2>/dev/null || echo "0")
@@ -305,7 +310,7 @@ test_latency_distribution() {
     # Calculate percentiles
     local p95=$(sort -n $latency_file | awk 'BEGIN{c=0} length($0){a[c]=$0;c++}END{p5=(c/100*5); p5=p5%1==0?p5:p5+1; print a[c-p5-1]}')
     local p99=$(sort -n $latency_file | awk 'BEGIN{c=0} length($0){a[c]=$0;c++}END{p1=(c/100*1); p1=p1%1==0?p1:p1+1; print a[c-p1-1]}')
-    local avg_latency=$(awk '{sum+=$1; count++} END {print count>0 ? sum/count : 0}' $latency_file)
+    local avg_latency=$(awk '{sum+=$1; count++} END {if(count>0) print sum/count; else print 0}' $latency_file)
     
     RESULT_P95_LATENCY=$p95
     RESULT_P99_LATENCY=$p99
@@ -393,9 +398,11 @@ test_correlation_stress() {
         # Check if trace exists in both regions (simplified correlation check)
         local iad_result=$(curl -s "http://localhost:16686/api/traces?service=correlation-iad&tags={\"platform.region\":\"iad1\"}" | grep -c "$trace_id" || echo "0")
         local sfo_result=$(curl -s "http://localhost:16686/api/traces?service=correlation-sfo&tags={\"platform.region\":\"sfo1\"}" | grep -c "$trace_id" || echo "0")
-        
-        if [ $iad_result -gt 0 ] && [ $sfo_result -gt 0 ]; then
+
+        if [[ "$iad_result" =~ ^[0-9]+$ ]] && [[ "$sfo_result" =~ ^[0-9]+$ ]]; then
+          if [ "$iad_result" -gt 0 ] && [ "$sfo_result" -gt 0 ]; then
             correlated_traces=$((correlated_traces + 1))
+          fi
         fi
     done
     
@@ -411,10 +418,14 @@ test_correlation_stress() {
     log_metric "Successfully correlated: ${correlated_traces}/100 sampled"
     
     # Check against target
-    if (( $(echo "$correlation_time <= $TARGET_CORRELATION" | bc -l 2>/dev/null || echo "0") )); then
+    if [[ "$correlation_time" =~ ^[0-9]+$ ]] && [[ "$TARGET_CORRELATION" =~ ^[0-9]+$ ]]; then
+      if [ "$correlation_time" -le "$TARGET_CORRELATION" ]; then
         log_success "Correlation time: ${correlation_time}s (target: ≤${TARGET_CORRELATION}s)"
-    else
+      else
         log_error "Correlation time: ${correlation_time}s exceeds target: ${TARGET_CORRELATION}s"
+      fi
+    else
+      echo "Valores no numéricos en correlation_time ($correlation_time) o TARGET_CORRELATION ($TARGET_CORRELATION)"
     fi
     
     echo ""

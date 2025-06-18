@@ -24,8 +24,8 @@ processors:
   # Batch processing optimization - Control batch size here
   batch:
     timeout: 1s
-    send_batch_size: 100 # Reduced from 5000 default
-    send_batch_max_size: 200 # Maximum batch size
+    send_batch_size: 10
+    send_batch_max_size: 10
 
   # Resource identification
   resource:
