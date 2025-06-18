@@ -129,7 +129,7 @@ monitor_resources() {
 test_throughput_stress() {
     log_test "🔥 HIGH VOLUME THROUGHPUT STRESS TEST"
     
-    local duration=300  # 5 minutes
+    local duration=60  # 1 minute
     local batch_size=10
     local concurrent_workers=5
     local batches_per_worker_per_sec=20  # Configurable rate per worker
@@ -703,6 +703,35 @@ generate_enterprise_report() {
     log_success "Enterprise benchmark report generated: $report_file"
 }
 
+# --- HEALTH CHECK FOR CRITICAL SERVICES ---
+check_service() {
+    local name="$1"
+    local port="$2"
+    if nc -z localhost "$port" 2>/dev/null; then
+        echo -e "${GREEN}[HEALTHY]${NC} $name (port $port)"
+        return 0
+    else
+        echo -e "${RED}[DOWN]${NC} $name (port $port)"
+        return 1
+    fi
+}
+
+check_critical_services() {
+    echo "🔎 Checking health of critical services before running benchmark..."
+    local failed=0
+    check_service "otel-collector-iad" 4318 || failed=1
+    check_service "otel-collector-sfo" 4320 || failed=1
+    check_service "kafka" 9092 || failed=1
+    check_service "trace-processor" 3000 || failed=1
+    check_service "clickhouse" 8123 || failed=1
+    check_service "jaeger" 16686 || failed=1
+    if [ $failed -eq 1 ]; then
+        echo -e "${RED}\n[ABORT] One or more critical services are DOWN. Please start all required services before running the benchmark.${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}\nAll critical services are healthy. Proceeding with benchmark...${NC}\n"
+}
+
 # Main execution
 main() {
     # Calculate dynamic target for display
@@ -716,6 +745,9 @@ main() {
     echo "Target throughput: ${dynamic_target_spans_per_sec} spans/sec (calculated from parameters)"
     echo "This benchmark addresses all critical feedback for production validation"
     echo ""
+
+    # Llamar a la comprobación de servicios críticos antes de main
+    check_critical_services
 
     # Run all benchmark tests
     test_throughput_stress

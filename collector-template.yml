@@ -21,11 +21,11 @@ processors:
         value: edge
         action: insert
 
-  # Batch processing optimization
+  # Batch processing optimization - Control batch size here
   batch:
-    timeout: 100ms
-    send_batch_size: 5
-    send_batch_max_size: 10
+    timeout: 1s
+    send_batch_size: 100 # Reduced from 5000 default
+    send_batch_max_size: 200 # Maximum batch size
 
   # Resource identification
   resource:
@@ -89,34 +89,60 @@ exporters:
     topic: ${env:KAFKA_TOPIC}
     encoding: otlp_proto
     producer:
-      max_message_bytes: 50000000 # 50MB limit
+      max_message_bytes: 1048576 # 1MB per message
       required_acks: 1
       compression: gzip
+    sending_queue:
+      enabled: true
+      num_consumers: 10
+      queue_size: 1000
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
 
   # OTLP to Jaeger for visualization
   otlp/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
 
   # Debug logging
   logging:
     loglevel: info
+    sampling_initial: 5
+    sampling_thereafter: 200
 
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
 
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+  zpages:
+    endpoint: 0.0.0.0:55679
+
 service:
-  extensions: [health_check]
+  extensions: [health_check, pprof, zpages]
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [attributes, resource, batch]
+      processors: [attributes, resource, batch, tail_sampling]
       exporters: [kafka, otlp/jaeger, logging]
 
   telemetry:
     logs:
-      level: "debug"
+      level: "info"
+      initial_fields:
+        service: "otel-collector"
+        region: ${env:REGION}
     metrics:
-      address: 0.0.0.0:8889
+      level: detailed
+      address: 0.0.0.0:8888
