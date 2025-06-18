@@ -1,6 +1,6 @@
 # Distributed Tracing Architecture PoC
 
-> **Production-scale observability system demonstrating enterprise-grade distributed tracing**
+> **Production-scale observability system for enterprise-grade distributed tracing**
 
 [![Docker](https://img.shields.io/badge/Docker-20.10+-blue)](https://docker.com)
 [![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-1.0+-green)](https://opentelemetry.io)
@@ -8,16 +8,15 @@
 
 ## 🎯 **Project Purpose**
 
-This project demonstrates a **production-ready distributed tracing architecture** designed for scale, addressing the specific challenges of observability in a globally distributed serverless platform.
+This project experiment around a **production-ready distributed tracing architecture** designed for scale, addressing the specific challenges of observability in a globally distributed serverless platform.
 
 **Primary Goals:**
 
 - 🔍 **Skill reinforcement**: Showcase advanced observability system design skills
 - 🏗️ **Architecture Demonstration**: Implement solutions for real-world distributed tracing problems at scale
 - 📊 **Performance Validation**: Benchmark and validate observability solutions with concrete metrics
-- 📝 **Knowledge Sharing**: Create content for technical blog posts and documentation
 
-## 🚀 **What Problems Does This Solve?**
+## 🚀 **What Problems Does This Study?**
 
 This implementation addresses **4 critical observability challenges** in distributed serverless architectures:
 
@@ -87,7 +86,7 @@ graph TB
 
 | Component         | Technology               | Purpose                               |
 | ----------------- | ------------------------ | ------------------------------------- |
-| **Collectors**    | OpenTelemetry            | Ultra-low latency span collection     |
+| **Collectors**    | OpenTelemetry            | low latency span collection           |
 | **Message Queue** | Apache Kafka             | Async processing & regional buffering |
 | **Processing**    | Node.js + Custom Logic   | Trace correlation & sampling          |
 | **Storage**       | ClickHouse (Sharded)     | High-performance time-series storage  |
@@ -115,23 +114,12 @@ cd observabilityJourney
 # Wait for services to initialize (~2 minutes)
 ```
 
-### 2. Run Enterprise-Grade Benchmark
+### 2. Run Benchmark
 
 ```bash
-# Run comprehensive enterprise-grade benchmarks
-./benchmark-solutions.sh
+# Run comprehensive benchmarks
+./benchmark.sh
 ```
-
-**🔥 ENHANCED: Enterprise-Grade Benchmark Suite**
-
-The improved benchmark addresses all critical feedback about insufficient testing rigor:
-
-- **Ultra-high volume**: 10,000+ spans/sec sustained for 5+ minutes
-- **Sustained duration**: Extended periods to detect performance drift
-- **Failure scenarios**: Network partitions, resource constraints, service restarts
-- **Resource monitoring**: CPU, memory, disk I/O usage tracking
-- **Latency distribution**: P95, P99 percentiles under varying load
-- **Cross-region correlation**: Thousands of distributed traces simultaneously
 
 ### 3. Explore Results
 
@@ -154,19 +142,6 @@ The improved benchmark addresses all critical feedback about insufficient testin
 | CPU Usage                | ≤80%              | 67.3%            | ✅     |
 | Memory Usage             | ≤2GB              | 1.2GB            | ✅     |
 | Resilience Rate          | ≥80%              | 100%             | ✅     |
-
-### Benchmark Methodology
-
-Our enterprise-grade benchmark addresses all critical feedback by implementing:
-
-1. **Ultra-high volume testing**: 10,000+ spans/sec sustained for 5+ minutes
-2. **Sustained duration testing**: Extended periods to detect performance drift and memory leaks
-3. **Failure scenario testing**: Network partitions, resource constraints, service restarts
-4. **Comprehensive resource monitoring**: CPU, memory, disk I/O usage tracking
-5. **Latency distribution analysis**: P95, P99 percentiles under varying load conditions
-6. **Cross-region correlation stress testing**: Thousands of distributed traces simultaneously
-7. **Realistic traffic patterns**: Bursts, steady state, and varying load patterns
-8. **Concurrent failure scenarios**: Multiple failure conditions simultaneously
 
 ## 🔍 **Key Implementation Highlights**
 
@@ -225,7 +200,7 @@ if (regions.length > 1) {
 - **`collector-template.yml`**: Unified, environment-variable driven collector config
 - **`trace-processor-enhanced.js`**: Smart sampling + correlation logic
 - **`app-simulator.sh`**: Generates realistic cross-region traces
-- **`benchmark-solutions.sh`**: Enterprise-grade performance validation
+- **`benchmark-solutions.sh`**: performance validation
 
 ## 🎯 **Learning Applications**
 
@@ -242,38 +217,7 @@ if (regions.length > 1) {
 - Kafka producer/consumer patterns for high throughput
 - Redis caching strategies for real-time correlation
 
-### Blog Post Topics
-
-- "Building Production-Scale Distributed Tracing: A Case Study"
-- "Cross-Region Trace Correlation: Solving the Serverless Observability Challenge"
-- "Optimizing OpenTelemetry for Edge Computing: Performance & Cost Analysis"
-
 ## 🧪 **Validation & Testing**
-
-### Run Enterprise-Grade Benchmark Suite
-
-```bash
-# Comprehensive benchmark with all critical feedback addressed
-./benchmark-solutions.sh
-```
-
-**🔥 What This Benchmark Validates:**
-
-- **Volume**: 10,000+ spans/sec sustained load for 5+ minutes
-- **Duration**: Extended periods to detect performance drift and memory leaks
-- **Stress**: Failure scenarios (network partitions, resource constraints)
-- **Monitoring**: Comprehensive resource tracking (CPU, memory, disk I/O)
-- **Distribution**: Cross-region correlation under high load
-- **Resilience**: Service restart and recovery testing
-
-**📊 Generated Reports:**
-
-- Performance metrics report with P95/P99 latencies
-- Cross-region correlation validation
-- Sampling efficiency analysis
-- Storage compression ratios
-- Memory usage patterns
-- Failure scenario test results
 
 ### Manual Testing Scenarios
 
@@ -330,16 +274,6 @@ The system includes comprehensive monitoring:
 
 Access dashboards at http://localhost:3002 after startup.
 
-## 🤝 **Contributing & Feedback**
-
-This project is designed as a learning and demonstration tool. Key areas for extension:
-
-- **Machine Learning**: Predictive sampling based on trace patterns
-- **Advanced Correlation**: ML-based span matching for complex traces
-- **Cost Optimization**: Dynamic sampling rate adjustment
-- **Security**: PII detection and anonymization
-- **Mobile Tracing**: React Native / mobile app instrumentation
-
 ## 📚 **Additional Resources**
 
 - [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
@@ -349,28 +283,4 @@ This project is designed as a learning and demonstration tool. Key areas for ext
 
 ---
 
-## 🎉 **Project Summary**
-
-This project provides a **complete, production-ready observability architecture** that addresses real-world challenges in distributed serverless platforms. It's designed specifically for:
-
-**🎯 Knowledge Improvement**: Improves deep system design knowledge for senior roles
-**🏗️ Technical Depth**: Shows understanding of OpenTelemetry, ClickHouse, Kafka, and distributed systems
-**📊 Performance Focus**: Includes comprehensive benchmarking and validation
-**📝 Content Creation**: Ready-to-publish technical demonstrations and blog posts
-
-**Key Achievements:**
-
-- ✅ **Clean Architecture**: Focused, production-ready implementation
-- ✅ **Performance Validated**: All metrics meet enterprise standards
-- ✅ **Enterprise-Grade Benchmarking**: Addresses all critical feedback about testing rigor
-- ✅ **Fully Documented**: Comprehensive README and inline documentation
-- ✅ **Knowledge Ready**: Addresses system design with working code
-- ✅ **Extensible**: Built for learning and experimentation
-
-**Start exploring in under 5 minutes:** `./start-demo.sh`
-
-**Run enterprise-grade benchmarks:** `./benchmark-solutions.sh`
-
----
-
-**Built for demonstrating production-scale observability architecture. Perfect for senior backend engineer study and technical content creation.**
+**Built for demonstrating production-scale observability architecture.**
