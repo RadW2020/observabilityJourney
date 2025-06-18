@@ -13,7 +13,7 @@ NC='\033[0m' # No Color
 
 # Improved test parameters
 TEST_DURATION=15  # seconds
-SPANS_PER_SEC=50  # more realistic load
+SPANS_PER_SEC=1000  # more realistic load
 BATCH_SIZE=10     # batch multiple spans together
 
 log_test() {
