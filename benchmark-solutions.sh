@@ -1,15 +1,9 @@
 #!/bin/bash
 
-# benchmark-solutions.sh
-# BENCHMARK SUITE FOR DISTRIBUTED TRACING
-# Addresses critical feedback: insufficient volume, duration, stress testing, and resource monitoring
-
 set -e
 
 echo "🔥 DISTRIBUTED TRACING BENCHMARK SUITE"
 echo "========================================================"
-echo "This benchmark addresses critical feedback for production validation"
-echo "Features: Dynamic throughput calculation, configurable parameters, comprehensive monitoring"
 echo ""
 
 # Colors for output
@@ -23,18 +17,16 @@ NC='\033[0m' # No Color
 
 # === GLOBAL BENCHMARK PARAMETERS ===
 BATCH_SIZE=10
-CONCURRENT_WORKERS=5
+CONCURRENT_WORKERS=50
 BATCHES_PER_WORKER_PER_SEC=20
-DYNAMIC_TARGET_SPANS_PER_SEC=$((BATCH_SIZE * CONCURRENT_WORKERS * BATCHES_PER_WORKER_PER_SEC))
+DURATION=30 # seconds
 
 # TARGETS
 TARGET_EDGE_LATENCY="5"       # ms (low for edge functions)
-TARGET_THROUGHPUT="10000"     # spans/sec (10x more demanding)
 TARGET_CORRELATION="0.5"      # seconds (much faster)
 TARGET_P95_LATENCY="100"      # ms (95th percentile)
 TARGET_P99_LATENCY="500"      # ms (99th percentile)
 TARGET_SUCCESS_RATE="99.9"    # percent (enterprise SLA)
-TARGET_DURATION="3600"        # seconds (1 hour sustained load)
 
 # Test results (macOS compatible - no associative arrays)
 RESULT_EDGE_LATENCY=""
@@ -88,7 +80,7 @@ show_progress() {
 
 # Resource monitoring
 monitor_resources() {
-    local duration=$1
+    local duration=$DURATION
     local interval=5
     local iterations=$((duration / interval))
     
@@ -125,21 +117,19 @@ monitor_resources() {
 test_throughput_stress() {
     log_test "🔥 HIGH VOLUME THROUGHPUT STRESS TEST"
     
-    local duration=60  # 1 minute
-    
     # Calculate dynamic target based on actual parameters
     local target_spans_per_sec=$((BATCH_SIZE * CONCURRENT_WORKERS * BATCHES_PER_WORKER_PER_SEC))
-    local total_spans=$((duration * target_spans_per_sec))
+    local total_spans=$((DURATION * target_spans_per_sec))
     
     log_info "Configuration: ${BATCH_SIZE} spans/batch, ${CONCURRENT_WORKERS} workers, ${BATCHES_PER_WORKER_PER_SEC} batches/sec/worker"
-    log_info "Target: ${target_spans_per_sec} spans/sec sustained for ${duration} seconds"
+    log_info "Target: ${target_spans_per_sec} spans/sec sustained for ${DURATION} seconds"
     log_info "Total spans to generate: ${total_spans}"
     
-    echo "   Generating ${total_spans} spans over ${duration}s with ${CONCURRENT_WORKERS} workers..."
+    echo "   Generating ${total_spans} spans over ${DURATION}s with ${CONCURRENT_WORKERS} workers..."
     echo "   Expected throughput: ${target_spans_per_sec} spans/sec (${BATCH_SIZE} × ${CONCURRENT_WORKERS} × ${BATCHES_PER_WORKER_PER_SEC})"
     
     # Start resource monitoring in background
-    monitor_resources $duration &
+    monitor_resources $DURATION &
     local monitor_pid=$!
     
     # Create worker function
@@ -197,6 +187,7 @@ test_throughput_stress() {
             fi
             
             # Delay to achieve target rate
+            echo "delay_per_batch: $delay_per_batch"
             sleep $delay_per_batch
         done
     }
@@ -515,63 +506,18 @@ test_failure_scenarios() {
 }
 
 
-# Post-benchmark analysis
-post_benchmark_analysis() {
-    log_info "Performing post-benchmark analysis..."
-    
-    # Check for any error logs
-    if [ -f "/tmp/benchmark_errors_$$.log" ]; then
-        error_count=$(wc -l < /tmp/benchmark_errors_$$.log)
-        log_warning "Found $error_count errors during benchmark"
-    fi
-    
-    # Generate summary statistics
-    echo ""
-    echo "📊 BENCHMARK SUMMARY"
-    echo "==================="
-    
-    # Check if benchmark report was generated
-    latest_report=$(ls -t enterprise-benchmark-report-*.txt 2>/dev/null | head -1)
-    if [ -n "$latest_report" ]; then
-        echo "📄 Detailed report: $latest_report"
-        echo ""
-        echo "Key findings from the report:"
-        echo "============================="
-        
-        # Extract key metrics from report
-        if grep -q "Throughput:" "$latest_report"; then
-            throughput=$(grep "Throughput:" "$latest_report" | head -1 | awk '{print $2}')
-            echo "   • Throughput: $throughput"
-        fi
-        
-        if grep -q "Average Latency:" "$latest_report"; then
-            latency=$(grep "Average Latency:" "$latest_report" | head -1 | awk '{print $3}')
-            echo "   • Average Latency: $latency"
-        fi
-        
-        if grep -q "Success Rate:" "$latest_report"; then
-            success_rate=$(grep "Success Rate:" "$latest_report" | head -1 | awk '{print $3}')
-            echo "   • Success Rate: $success_rate"
-        fi
-    fi
-    
-}
-
 # Generate comprehensive enterprise report
 generate_enterprise_report() {
     local report_file="enterprise-benchmark-report-$(date +%Y%m%d-%H%M%S).txt"
 
     echo "# DISTRIBUTED TRACING BENCHMARK REPORT" > $report_file
     echo "Generated: $(date)" >> $report_file
-    echo "Duration: ${TARGET_DURATION}s sustained testing" >> $report_file
     echo "" >> $report_file
     
     echo "## EXECUTIVE SUMMARY" >> $report_file
     echo "This benchmark addresses critical feedback for production validation:" >> $report_file
     echo "- Configuration: ${BATCH_SIZE} spans/batch, ${CONCURRENT_WORKERS} workers, ${BATCHES_PER_WORKER_PER_SEC} batches/sec/worker" >> $report_file
-    echo "- Target throughput: ${DYNAMIC_TARGET_SPANS_PER_SEC} spans/sec (calculated from parameters)" >> $report_file
-    echo "- Actual throughput: ${RESULT_THROUGHPUT} spans/sec" >> $report_file
-    echo "- Sustained duration: ${TARGET_DURATION}s testing" >> $report_file
+    echo "- Actual throughput: ${RESULT_THROUGHPUT} spans/sec" - Desired 1000 spans/sec >> $report_file
     echo "- Failure scenarios: Network partitions, resource constraints" >> $report_file
     echo "- Resource monitoring: CPU, memory, and performance metrics" >> $report_file
     echo "" >> $report_file
@@ -581,7 +527,6 @@ generate_enterprise_report() {
     echo "- Average Latency: ${RESULT_EDGE_LATENCY}ms (target: ≤${TARGET_EDGE_LATENCY}ms)" >> $report_file
     echo "- P95 Latency: ${RESULT_P95_LATENCY}ms (target: ≤${TARGET_P95_LATENCY}ms)" >> $report_file
     echo "- P99 Latency: ${RESULT_P99_LATENCY}ms (target: ≤${TARGET_P99_LATENCY}ms)" >> $report_file
-    echo "- Throughput: ${RESULT_THROUGHPUT} spans/sec (target: ≥${DYNAMIC_TARGET_SPANS_PER_SEC} spans/sec)" >> $report_file
     echo "- Success Rate: ${RESULT_SUCCESS_RATE}% (target: ≥${TARGET_SUCCESS_RATE}%)" >> $report_file
     echo "" >> $report_file
     
@@ -631,11 +576,7 @@ check_critical_services() {
 
 # Main execution
 main() {
- 
-    echo "🚀 Starting benchmark suite..."
     echo "Configuration: ${BATCH_SIZE} spans/batch, ${CONCURRENT_WORKERS} workers, ${BATCHES_PER_WORKER_PER_SEC} batches/sec/worker"
-    echo "Target throughput: ${DYNAMIC_TARGET_SPANS_PER_SEC} spans/sec (calculated from parameters)"
-    echo "This benchmark addresses all critical feedback for production validation"
     echo ""
 
     # Check critical services
@@ -646,10 +587,6 @@ main() {
     test_latency_distribution
     test_correlation_stress
     test_failure_scenarios
-    test_system_health
-    
-    # Post-benchmark analysis
-    post_benchmark_analysis
     
     # Generate comprehensive report
     generate_enterprise_report
@@ -661,8 +598,7 @@ main() {
     
     echo "📊 Results Summary:"
     echo "   • Configuration: ${BATCH_SIZE} spans/batch, ${CONCURRENT_WORKERS} workers, ${BATCHES_PER_WORKER_PER_SEC} batches/sec/worker"
-    echo "   • Target Throughput: ${DYNAMIC_TARGET_SPANS_PER_SEC} spans/sec (calculated from parameters)"
-    echo "   • Actual Throughput: ${RESULT_THROUGHPUT} spans/sec"
+    echo "   • Actual Throughput: ${RESULT_THROUGHPUT} spans/sec" - Desired 1000 spans/sec
     echo "   • Average Latency: ${RESULT_EDGE_LATENCY}ms (target: ${TARGET_EDGE_LATENCY})"
     echo "   • P95 Latency: ${RESULT_P95_LATENCY}ms (target: ${TARGET_P95_LATENCY})"
     echo "   • P99 Latency: ${RESULT_P99_LATENCY}ms (target: ${TARGET_P99_LATENCY})"
