@@ -1,14 +1,15 @@
-// trace-processor-enhanced.js
+// trace-processor.js
 // Production-ready trace processor for distributed tracing
 
 const { Kafka } = require("kafkajs");
 const { createClient } = require("@clickhouse/client");
+const http = require("http");
 
 class DistributedTraceProcessor {
   constructor() {
     // Kafka setup with optimized configuration
     this.kafka = new Kafka({
-      clientId: "distributed-trace-processor",
+      clientId: "trace-processor",
       brokers: [process.env.KAFKA_BROKER || "localhost:9092"],
       retry: { initialRetryTime: 100, retries: 8 },
     });
@@ -35,7 +36,7 @@ class DistributedTraceProcessor {
     };
 
     this.consumer = this.kafka.consumer({
-      groupId: "distributed-trace-processor",
+      groupId: "trace-processor",
       sessionTimeout: 30000,
       maxBytesPerPartition: 1048576, // 1MB
     });
@@ -260,5 +261,22 @@ process.on("SIGTERM", async () => {
 
 // Start processing
 processor.start().catch(console.error);
+
+// --- Health check HTTP server ---
+const PORT = 3000;
+
+http
+  .createServer((req, res) => {
+    if (req.url === "/health") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ status: "ok" }));
+    } else {
+      res.writeHead(404);
+      res.end();
+    }
+  })
+  .listen(PORT, "0.0.0.0", () => {
+    console.log(`Health check server running on port ${PORT}`);
+  });
 
 module.exports = DistributedTraceProcessor;
