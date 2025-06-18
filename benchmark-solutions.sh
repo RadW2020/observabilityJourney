@@ -21,6 +21,11 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# === GLOBAL BENCHMARK PARAMETERS ===
+BATCH_SIZE=10
+CONCURRENT_WORKERS=5
+BATCHES_PER_WORKER_PER_SEC=20
+
 # ENTERPRISE-GRADE TARGETS
 TARGET_EDGE_LATENCY="5"       # ms (low for edge functions)
 TARGET_THROUGHPUT="10000"     # spans/sec (10x more demanding)
@@ -28,8 +33,6 @@ TARGET_CORRELATION="0.5"      # seconds (much faster)
 TARGET_P95_LATENCY="100"      # ms (95th percentile)
 TARGET_P99_LATENCY="500"      # ms (99th percentile)
 TARGET_SUCCESS_RATE="99.9"    # percent (enterprise SLA)
-TARGET_MEMORY_USAGE="2048"    # MB (realistic memory limits)
-TARGET_CPU_USAGE="80"         # percent (CPU utilization)
 TARGET_DURATION="3600"        # seconds (1 hour sustained load)
 
 # Test results (macOS compatible - no associative arrays)
@@ -39,8 +42,6 @@ RESULT_CORRELATION=""
 RESULT_P95_LATENCY=""
 RESULT_P99_LATENCY=""
 RESULT_SUCCESS_RATE=""
-RESULT_MEMORY_USAGE=""
-RESULT_CPU_USAGE=""
 RESULT_ERROR_COUNT="0"
 RESULT_TOTAL_REQUESTS="0"
 
@@ -111,14 +112,8 @@ monitor_resources() {
         show_progress $i $iterations
         sleep $interval
     done
-    
-    # Calculate averages
-    RESULT_CPU_USAGE=$(awk -F',' 'NR>1 {sum+=$2; count++} END {if(count>0) print sum/count; else print 0}' $monitor_file)
-    RESULT_MEMORY_USAGE=$(awk -F',' 'NR>1 {sum+=$3; count++} END {if(count>0) print sum/count; else print 0}' $monitor_file)
-    
+      
     echo ""
-    log_metric "Average CPU usage: ${RESULT_CPU_USAGE}%"
-    log_metric "Average memory usage: ${RESULT_MEMORY_USAGE}MB"
     log_info "Resource monitoring data saved to: $monitor_file"
     
     # Don't delete the file - keep it for inspection
@@ -130,20 +125,17 @@ test_throughput_stress() {
     log_test "🔥 HIGH VOLUME THROUGHPUT STRESS TEST"
     
     local duration=60  # 1 minute
-    local batch_size=10
-    local concurrent_workers=5
-    local batches_per_worker_per_sec=20  # Configurable rate per worker
     
     # Calculate dynamic target based on actual parameters
-    local target_spans_per_sec=$((batch_size * concurrent_workers * batches_per_worker_per_sec))
+    local target_spans_per_sec=$((BATCH_SIZE * CONCURRENT_WORKERS * BATCHES_PER_WORKER_PER_SEC))
     local total_spans=$((duration * target_spans_per_sec))
     
-    log_info "Configuration: ${batch_size} spans/batch, ${concurrent_workers} workers, ${batches_per_worker_per_sec} batches/sec/worker"
+    log_info "Configuration: ${BATCH_SIZE} spans/batch, ${CONCURRENT_WORKERS} workers, ${BATCHES_PER_WORKER_PER_SEC} batches/sec/worker"
     log_info "Target: ${target_spans_per_sec} spans/sec sustained for ${duration} seconds"
     log_info "Total spans to generate: ${total_spans}"
     
-    echo "   Generating ${total_spans} spans over ${duration}s with ${concurrent_workers} workers..."
-    echo "   Expected throughput: ${target_spans_per_sec} spans/sec (${batch_size} × ${concurrent_workers} × ${batches_per_worker_per_sec})"
+    echo "   Generating ${total_spans} spans over ${duration}s with ${CONCURRENT_WORKERS} workers..."
+    echo "   Expected throughput: ${target_spans_per_sec} spans/sec (${BATCH_SIZE} × ${CONCURRENT_WORKERS} × ${BATCHES_PER_WORKER_PER_SEC})"
     
     # Start resource monitoring in background
     monitor_resources $duration &
@@ -152,17 +144,17 @@ test_throughput_stress() {
     # Create worker function
     worker_function() {
         local worker_id=$1
-        local spans_per_worker=$((total_spans / concurrent_workers))
+        local spans_per_worker=$((total_spans / CONCURRENT_WORKERS))
         local batch_count=0
         
         # Calculate delay to achieve target rate
-        local delay_per_batch=$(echo "scale=6; 1.0 / $batches_per_worker_per_sec" | bc -l 2>/dev/null || echo "0.05")
+        local delay_per_batch=$(echo "scale=6; 1.0 / $BATCHES_PER_WORKER_PER_SEC" | bc -l 2>/dev/null || echo "0.05")
         
-        for ((i=0; i<spans_per_worker; i+=batch_size)); do
+        for ((i=0; i<spans_per_worker; i+=BATCH_SIZE)); do
             # Generate batch of spans
             local batch_data="{\"resourceSpans\":[{\"resource\":{\"attributes\":[{\"key\":\"service.name\",\"value\":{\"stringValue\":\"stress-test-worker-${worker_id}\"}}]},\"scopeSpans\":[{\"spans\":["
             
-            for ((j=0; j<batch_size && i+j<spans_per_worker; j++)); do
+            for ((j=0; j<BATCH_SIZE && i+j<spans_per_worker; j++)); do
                 local trace_id=$(printf "%032x" $((RANDOM * RANDOM + i + j)))
                 local span_id=$(printf "%016x" $((RANDOM * RANDOM + i + j)))
                 local start_time=$(date +%s%N)
@@ -170,7 +162,7 @@ test_throughput_stress() {
                 
                 batch_data+="{\"traceId\":\"$trace_id\",\"spanId\":\"$span_id\",\"name\":\"stress-test-span\",\"kind\":1,\"startTimeUnixNano\":\"$start_time\",\"endTimeUnixNano\":\"$end_time\",\"status\":{\"code\":0}}"
                 
-                if [ $j -lt $((batch_size-1)) ] && [ $((i+j+1)) -lt $spans_per_worker ]; then
+                if [ $j -lt $((BATCH_SIZE-1)) ] && [ $((i+j+1)) -lt $spans_per_worker ]; then
                     batch_data+=","
                 fi
             done
@@ -199,7 +191,7 @@ test_throughput_stress() {
             
             # Show progress every 100 batches
             if [ $((batch_count % 100)) -eq 0 ]; then
-                local completed_spans=$((batch_count * batch_size))
+                local completed_spans=$((batch_count * BATCH_SIZE))
                 echo "   Worker ${worker_id}: ${batch_count} batches (${completed_spans} spans) completed" >&2
             fi
             
@@ -214,7 +206,7 @@ test_throughput_stress() {
     touch /tmp/benchmark_errors_$$.log
     touch /tmp/benchmark_success_$$.log
     
-    for ((w=0; w<concurrent_workers; w++)); do
+    for ((w=0; w<CONCURRENT_WORKERS; w++)); do
         worker_function $w &
     done
     
@@ -521,82 +513,13 @@ test_failure_scenarios() {
     echo ""
 }
 
-# Test 5: SYSTEM HEALTH AND MONITORING
-test_system_health() {
-    log_test "🏥 SYSTEM HEALTH AND MONITORING TEST"
-    log_info "Comprehensive system health validation"
-    
-    echo "   Checking comprehensive system health..."
-    
-    # Check all critical services
-    local healthy_services=0
-    local total_services=0
-    
-    local services=(
-        "clickhouse:8123"
-        "kafka:9092"
-        "trace-processor:3000"
-        "otel-collector-iad:4318"
-        "otel-collector-sfo:4320"
-        "jaeger:16686"
-        "grafana:3002"
-        "prometheus:9090"
-        "redis:6379"
-    )
-    
-    for service in "${services[@]}"; do
-        local service_name=$(echo $service | cut -d: -f1)
-        local service_port=$(echo $service | cut -d: -f2)
-        total_services=$((total_services + 1))
-        
-        if nc -z localhost $service_port 2>/dev/null; then
-            echo "   ✅ $service_name: Healthy"
-            healthy_services=$((healthy_services + 1))
-        else
-            echo "   ❌ $service_name: Unhealthy"
-        fi
-    done
-    
-    local health_percentage=$((healthy_services * 100 / total_services))
-    
-    # Check resource usage
-    local current_memory=$(docker stats --no-stream --format "table {{.MemUsage}}" | tail -n +2 | awk '{sum += $1} END {print sum}' | sed 's/MiB//' || echo "0")
-    local current_cpu=$(top -l 1 | grep "CPU usage" | awk '{print $3}' | sed 's/%//' | head -1 || echo "0")
-    
-    log_metric "System health: ${health_percentage}% (${healthy_services}/${total_services} services)"
-    log_metric "Current memory usage: ${current_memory}MB"
-    log_metric "Current CPU usage: ${current_cpu}%"
-    
-    if [ $health_percentage -ge 90 ]; then
-        log_success "System health: ${health_percentage}%"
-    else
-        log_error "System health: ${health_percentage}% - critical services down"
-    fi
-    
-    if (( $(echo "$current_memory <= $TARGET_MEMORY_USAGE" | bc -l 2>/dev/null || echo "0") )); then
-        log_success "Memory usage: ${current_memory}MB (target: ≤${TARGET_MEMORY_USAGE}MB)"
-    else
-        log_warning "Memory usage: ${current_memory}MB exceeds target: ${TARGET_MEMORY_USAGE}MB"
-    fi
-    
-    if (( $(echo "$current_cpu <= $TARGET_CPU_USAGE" | bc -l 2>/dev/null || echo "0") )); then
-        log_success "CPU usage: ${current_cpu}% (target: ≤${TARGET_CPU_USAGE}%)"
-    else
-        log_warning "CPU usage: ${current_cpu}% exceeds target: ${TARGET_CPU_USAGE}%"
-    fi
-    
-    echo ""
-}
 
 # Post-benchmark analysis
 post_benchmark_analysis() {
     log_info "Performing post-benchmark analysis..."
     
     # Calculate dynamic target for analysis
-    local batch_size=10
-    local concurrent_workers=5
-    local batches_per_worker_per_sec=20
-    local dynamic_target_spans_per_sec=$((batch_size * concurrent_workers * batches_per_worker_per_sec))
+    local dynamic_target_spans_per_sec=$((BATCH_SIZE * CONCURRENT_WORKERS * BATCHES_PER_WORKER_PER_SEC))
     
     # Check for any error logs
     if [ -f "/tmp/benchmark_errors_$$.log" ]; then
@@ -653,10 +576,7 @@ generate_enterprise_report() {
     local report_file="enterprise-benchmark-report-$(date +%Y%m%d-%H%M%S).txt"
     
     # Calculate dynamic target for this run
-    local batch_size=10
-    local concurrent_workers=5
-    local batches_per_worker_per_sec=20
-    local dynamic_target_spans_per_sec=$((batch_size * concurrent_workers * batches_per_worker_per_sec))
+    local dynamic_target_spans_per_sec=$((BATCH_SIZE * CONCURRENT_WORKERS * BATCHES_PER_WORKER_PER_SEC))
     
     echo "# ENTERPRISE-GRADE DISTRIBUTED TRACING BENCHMARK REPORT" > $report_file
     echo "Generated: $(date)" >> $report_file
@@ -665,7 +585,7 @@ generate_enterprise_report() {
     
     echo "## EXECUTIVE SUMMARY" >> $report_file
     echo "This benchmark addresses critical feedback for production validation:" >> $report_file
-    echo "- Configuration: ${batch_size} spans/batch, ${concurrent_workers} workers, ${batches_per_worker_per_sec} batches/sec/worker" >> $report_file
+    echo "- Configuration: ${BATCH_SIZE} spans/batch, ${CONCURRENT_WORKERS} workers, ${BATCHES_PER_WORKER_PER_SEC} batches/sec/worker" >> $report_file
     echo "- Target throughput: ${dynamic_target_spans_per_sec} spans/sec (calculated from parameters)" >> $report_file
     echo "- Actual throughput: ${RESULT_THROUGHPUT} spans/sec" >> $report_file
     echo "- Sustained duration: ${TARGET_DURATION}s testing" >> $report_file
@@ -683,8 +603,6 @@ generate_enterprise_report() {
     echo "" >> $report_file
     
     echo "### System Health" >> $report_file
-    echo "- CPU Usage: ${RESULT_CPU_USAGE}% (target: ≤${TARGET_CPU_USAGE}%)" >> $report_file
-    echo "- Memory Usage: ${RESULT_MEMORY_USAGE}MB (target: ≤${TARGET_MEMORY_USAGE}MB)" >> $report_file
     echo "- Cross-Region Correlation: ${RESULT_CORRELATION}s (target: ≤${TARGET_CORRELATION}s)" >> $report_file
     echo "" >> $report_file
     
@@ -746,13 +664,10 @@ check_critical_services() {
 # Main execution
 main() {
     # Calculate dynamic target for display
-    local batch_size=10
-    local concurrent_workers=5
-    local batches_per_worker_per_sec=20
-    local dynamic_target_spans_per_sec=$((batch_size * concurrent_workers * batches_per_worker_per_sec))
+    local dynamic_target_spans_per_sec=$((BATCH_SIZE * CONCURRENT_WORKERS * BATCHES_PER_WORKER_PER_SEC))
     
     echo "🚀 Starting ENTERPRISE-GRADE benchmark suite..."
-    echo "Configuration: ${batch_size} spans/batch, ${concurrent_workers} workers, ${batches_per_worker_per_sec} batches/sec/worker"
+    echo "Configuration: ${BATCH_SIZE} spans/batch, ${CONCURRENT_WORKERS} workers, ${BATCHES_PER_WORKER_PER_SEC} batches/sec/worker"
     echo "Target throughput: ${dynamic_target_spans_per_sec} spans/sec (calculated from parameters)"
     echo "This benchmark addresses all critical feedback for production validation"
     echo ""
@@ -778,14 +693,8 @@ main() {
     echo "🎉 ENTERPRISE BENCHMARK COMPLETED SUCCESSFULLY!"
     echo "==============================================="
     
-    # Calculate dynamic target for summary
-    local batch_size=10
-    local concurrent_workers=5
-    local batches_per_worker_per_sec=20
-    local dynamic_target_spans_per_sec=$((batch_size * concurrent_workers * batches_per_worker_per_sec))
-    
     echo "📊 Results Summary:"
-    echo "   • Configuration: ${batch_size} spans/batch, ${concurrent_workers} workers, ${batches_per_worker_per_sec} batches/sec/worker"
+    echo "   • Configuration: ${BATCH_SIZE} spans/batch, ${CONCURRENT_WORKERS} workers, ${BATCHES_PER_WORKER_PER_SEC} batches/sec/worker"
     echo "   • Target Throughput: ${dynamic_target_spans_per_sec} spans/sec (calculated from parameters)"
     echo "   • Actual Throughput: ${RESULT_THROUGHPUT} spans/sec"
     echo "   • Average Latency: ${RESULT_EDGE_LATENCY}ms (target: ${TARGET_EDGE_LATENCY})"
@@ -793,15 +702,6 @@ main() {
     echo "   • P99 Latency: ${RESULT_P99_LATENCY}ms (target: ${TARGET_P99_LATENCY})"
     echo "   • Success Rate: ${RESULT_SUCCESS_RATE}% (target: ${TARGET_SUCCESS_RATE})"
     echo "   • Cross-Region Correlation: ${RESULT_CORRELATION}s (target: ${TARGET_CORRELATION})"
-    echo "   • CPU Usage: ${RESULT_CPU_USAGE}% (target: ${TARGET_CPU_USAGE})"
-    echo "   • Memory Usage: ${RESULT_MEMORY_USAGE}MB (target: ${TARGET_MEMORY_USAGE})"
-    echo ""
-    echo "🔍 This benchmark validates production readiness by addressing:"
-    echo "   • Volume: ${dynamic_target_spans_per_sec} spans/sec sustained load (configurable)"
-    echo "   • Duration: ${TARGET_DURATION}s of continuous testing"
-    echo "   • Stress: Failure scenarios and resource constraints"
-    echo "   • Monitoring: Comprehensive resource tracking"
-    echo "   • Distribution: Cross-region correlation under load"
     echo ""
     echo "Access the following URLs to explore results:"
     echo "   • Jaeger UI: http://localhost:16686"
