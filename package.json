@@ -1,5 +1,5 @@
 {
-  "name": "distributed-trace-processor",
+  "name": "trace-processor",
   "version": "1.0.0",
   "description": "Production-ready trace processor for distributed tracing PoC",
   "main": "index.js",

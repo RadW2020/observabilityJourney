@@ -103,8 +103,6 @@ wait_for_services() {
     # Give additional time for all services to fully initialize
     log_info "Allowing additional time for service initialization..."
     sleep 10
-    
-    log_success "All services are ready"
 }
 
 # Main execution
@@ -129,18 +127,6 @@ main() {
     echo "  1. Wait for traces:    The app simulator is automatically generating traces"
     echo "  2. View in Grafana:    Open http://localhost:3002 and go to Dashboards"
     echo "  3. Explore in Jaeger:  Open http://localhost:16686 to see individual traces"
-    echo ""
-    echo "📋 System Status:"
-    echo "  • Grafana:             Provisioned with ClickHouse datasource"
-    echo "  • ClickHouse:          Native protocol on 9000, HTTP on 8123"
-    echo "  • Trace Generation:    Automatic via app-simulator"
-    echo "  • Data Persistence:    Enabled via Docker volumes"
-    echo ""
-    echo "🎯 Features Enabled:"
-    echo "  ✅ Cross-region trace correlation"
-    echo "  ✅ Native ClickHouse protocol"
-    echo "  ✅ Automatic dashboard provisioning"
-    echo "  ✅ Continuous trace generation"
     echo ""
     echo "💡 Tip: If you don't see data in Grafana immediately, wait a few minutes for traces to accumulate"
 }

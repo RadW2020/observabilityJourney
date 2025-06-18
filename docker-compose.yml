@@ -118,7 +118,7 @@ services:
     container_name: trace-processor
     working_dir: /app
     volumes:
-      - ./trace-processor-enhanced.js:/app/index.js
+      - ./trace-processor.js:/app/index.js
       - ./package.json:/app/package.json
     command: sh -c "npm install && node index.js"
     depends_on:
