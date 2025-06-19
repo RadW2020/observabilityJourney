@@ -12,7 +12,7 @@ This project experiment around a **production-ready distributed tracing architec
 
 **Primary Goals:**
 
-- 🔍 **Skill reinforcement**: Showcase advanced observability system design skills
+- 🔍 **Skill reinforcement**: Advanced observability system design
 - 🏗️ **Architecture Demonstration**: Implement solutions for real-world distributed tracing problems at scale
 - 📊 **Performance Validation**: Benchmark and validate observability solutions with concrete metrics
 
@@ -29,7 +29,7 @@ This implementation addresses **4 critical observability challenges** in distrib
 ### 2. **Edge Function Latency Impact** ❌➡️✅
 
 - **Problem**: Tracing overhead affects edge function performance
-- **Solution**: Ultra-optimized collectors with memory buffering and async processing
+- **Solution**: Optimized collectors with memory buffering and async processing
 - **Validation**: <5ms additional latency overhead
 
 ### 3. **Intelligent Sampling at Scale** ❌➡️✅
@@ -92,7 +92,7 @@ graph TB
 | **Storage**       | ClickHouse (Sharded)     | High-performance time-series storage  |
 | **Correlation**   | Redis                    | Cross-region trace stitching          |
 | **Visualization** | Jaeger + Grafana         | Trace exploration & monitoring        |
-| **Applications**  | Next.js + Edge Functions | Realistic workload simulation         |
+| **Applications**  | Next.js + Edge Functions | Workload simulation                   |
 
 ## 🚀 **Quick Start**
 
@@ -111,14 +111,14 @@ cd observabilityJourney
 # Start all services
 ./start-demo.sh
 
-# Wait for services to initialize (~2 minutes)
+# Wait for services to initialize (~1 minute)
 ```
 
 ### 2. Run Benchmark
 
 ```bash
 # Run comprehensive benchmarks
-./benchmark.sh
+./xxx-benchmark.sh
 ```
 
 ### 3. Explore Results
@@ -126,22 +126,6 @@ cd observabilityJourney
 - **Jaeger UI**: http://localhost:16686 - Trace exploration
 - **Grafana**: http://localhost:3002 (admin/admin) - Performance dashboards
 - **ClickHouse**: http://localhost:8123 - Query interface
-
-## 📊 **Performance Targets & Results**
-
-### Enterprise-Grade Performance (Updated)
-
-| Metric                   | Target            | Achieved         | Status |
-| ------------------------ | ----------------- | ---------------- | ------ |
-| Average Latency          | ≤5ms              | 4.86ms           | ✅     |
-| P95 Latency              | ≤100ms            | 12.3ms           | ✅     |
-| P99 Latency              | ≤500ms            | 45.2ms           | ✅     |
-| Throughput               | ≥10,000 spans/sec | 12,847 spans/sec | ✅     |
-| Cross-Region Correlation | ≤0.5s             | 0.8s             | ✅     |
-| Success Rate             | ≥99.9%            | 99.9%            | ✅     |
-| CPU Usage                | ≤80%              | 67.3%            | ✅     |
-| Memory Usage             | ≤2GB              | 1.2GB            | ✅     |
-| Resilience Rate          | ≥80%              | 100%             | ✅     |
 
 ## 🔍 **Key Implementation Highlights**
 
@@ -183,24 +167,16 @@ if (regions.length > 1) {
 ## 📁 **Project Structure**
 
 ```
-├── README.md                     # Complete project documentation
-├── start-demo.sh                 # One-command startup with health checks
-├── benchmark-solutions.sh        # Enterprise-grade performance validation suite
+├── README.md                    # Complete project documentation
+├── start-demo.sh                # One-command startup with health checks
+├── *-benchmark.sh               # Several Performance validations
 ├── docker-compose.yml           # Complete observability stack
 ├── trace-processor-enhanced.js  # Production-ready trace processing
 ├── package.json                 # Node.js dependencies
 ├── app-simulator.sh             # Realistic traffic generator
 ├── collector-template.yml       # Unified collector configuration
-└── prometheus.yml              # Monitoring configuration
+└── prometheus.yml               # Monitoring configuration
 ```
-
-**Key Files:**
-
-- **`docker-compose.yml`**: Production-like observability stack with 11 services
-- **`collector-template.yml`**: Unified, environment-variable driven collector config
-- **`trace-processor-enhanced.js`**: Smart sampling + correlation logic
-- **`app-simulator.sh`**: Generates realistic cross-region traces
-- **`benchmark-solutions.sh`**: performance validation
 
 ## 🎯 **Learning Applications**
 
@@ -280,7 +256,3 @@ Access dashboards at http://localhost:3002 after startup.
 - [ClickHouse Time-Series Best Practices](https://clickhouse.com/blog/working-with-time-series-data-and-functions-ClickHouse)
 - [Vercel Observability Blog Posts](https://vercel.com/products/observability)
 - [Distributed Tracing Patterns](https://microservices.io/patterns/observability/distributed-tracing.html)
-
----
-
-**Built for demonstrating production-scale observability architecture.**
